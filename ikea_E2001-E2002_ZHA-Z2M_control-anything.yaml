@@ -1,0 +1,726 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: Jan Rydrych
+  domain: automation
+  name: IKEA Styrbar (E2001/E2002) Control (ZHA/Z2M)
+  description: "## Control anything with **IKEA STYRBAR** remote\n\n
+    Only for use with [ZHA](https://www.home-assistant.io/integrations/zha/) or Zigbee2MQTT
+    (cf [MQTT](https://www.home-assistant.io/integrations/mqtt) + [Z2M addon](https://www.zigbee2mqtt.io/guide/installation/03_ha_addon.html)).\n\n
+    Available controls:\n- Single press **on/off**\n- Hold **on/off**\n- Single press **left/right** arrow\n
+    Actions will be executed every **Hold delay**, but maximum **Max number of loops** times.\n"
+  input:
+    remote_device:
+      name: Remote
+      description: 'IKEA remote (Styrbar) to use.
+
+        '
+      default: []
+      selector:
+        device:
+          filter:
+          - integration: zha
+            manufacturer: IKEA of Sweden
+            model: STYRBAR remote control
+          - integration: mqtt
+            manufacturer: IKEA
+            model: STYRBAR remote control
+          multiple: false
+    on_press_action:
+      name: Press "on" action
+      description: Choose action(s) to run when **on** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    off_press_action:
+      name: Press "off" action
+      description: Choose action(s) to run when **off** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    on_hold_action:
+      name: Hold "on" action
+      description: Choose action(s) to run when **on** button is **held**.
+      default: []
+      selector:
+        action: {}
+    off_hold_action:
+      name: Hold "off" action
+      description: Choose action(s) to run when **off** button is **held**.
+      default: []
+      selector:
+        action: {}
+    arrow_left_press_action:
+      name: Press "arrow_left" action
+      description: Choose action(s) to run when **arrow_left** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    arrow_right_press_action:
+      name: Press "arrow_right" action
+      description: Choose action(s) to run when **arrow_right** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    helper_section:
+      name: Helpers
+      icon: mdi:cog-outline
+      collapsed: true
+      input:
+        helper_hold_delay:
+          name: Hold delay
+          description: Delay between the execution of the **Hold** action(s).
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max number of loops
+          description: Maximum number of loops when holding down a button.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
+              step: 1.0
+              mode: slider
+        helper_color_list:
+          name: Colors to cycle through
+          select:
+            multiple: true
+            mode: dropdown
+            options:
+              - label: Red
+                value: red
+              - label: Green
+                value: green
+              - label: Blue
+                value: blue
+              - label: Orange
+                value: orange
+              - label: Yellow
+                value: yellow
+              - label: White
+                value: white
+mode: single
+max_exceeded: silent
+triggers:
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: 'on'
+    cluster_id: 6
+    endpoint_id: 1
+  id: press-on-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: 'off'
+    cluster_id: 6
+    endpoint_id: 1
+  id: press-off-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: arrow_left_click
+    cluster_id: 5
+    endpoint_id: 1
+  id: press-arrow-left-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: arrow_right_click
+    cluster_id: 5
+    endpoint_id: 1
+  id: press-arrow-right-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: move_with_on_off
+    cluster_id: 8
+    endpoint_id: 1
+    args:
+    - 0
+    - 83
+  id: hold-on-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: move
+    cluster_id: 8
+    endpoint_id: 1
+    args:
+    - 1
+    - 83
+    - 0
+    - 0
+  id: hold-off-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    cluster_id: 8
+    endpoint_id: 1
+    command: stop_with_on_off
+  id: release-zha-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: 'on'
+  id: press-on-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: 'off'
+  id: press-off-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: arrow_left_click
+  id: press-arrow-left-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: arrow_right_click
+  id: press-arrow-right-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_move_up
+  id: hold-on-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_move_down
+  id: hold-off-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_stop
+  id: release-z2m-e2001
+actions:
+- choose:
+  - conditions:
+    - condition: trigger
+      id:
+      - press-on-zha-e2001
+      - press-on-z2m-e2001
+    sequence:
+      !input on_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-off-zha-e2001
+      - press-off-z2m-e2001
+    sequence:
+      !input off_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-arrow-left-zha-e2001
+      - press-arrow-left-z2m-e2001
+    sequence:
+      !input arrow_left_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-arrow-right-zha-e2001
+      - press-arrow-right-z2m-e2001
+    sequence:
+      !input arrow_right_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - hold-on-zha-e2001
+      - hold-on-z2m-e2001
+    sequence:
+    - repeat:
+        count: !input helper_max_loops
+        sequence:
+        - parallel:
+          - sequence: !input on_hold_action
+          - sequence:
+            - choose:
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-on-zha-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: event
+                    event_type: zha_event
+                    event_data:
+                      device_id: !input remote_device
+                      command: stop_with_on_off
+                      cluster_id: 8
+                      endpoint_id: 1
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-on-z2m-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: brightness_stop
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: 1_long_release
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+  - conditions:
+    - condition: trigger
+      id:
+      - hold-off-zha-e2001
+      - hold-off-z2m-e2001
+    sequence:
+    - repeat:
+        count: !input helper_max_loops
+        sequence:
+        - parallel:
+          - sequence: !input off_hold_action
+          - sequence:
+            - choose:
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-off-zha-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: event
+                    event_type: zha_event
+                    event_data:
+                      device_id: !input remote_device
+                      command: stop_with_on_off
+                      cluster_id: 8
+                      endpoint_id: 1
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-off-z2m-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: brightness_stop
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: 2_long_release
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: Jan Rydrych
+  domain: automation
+  name: IKEA Styrbar (E2001/E2002) Control (ZHA/Z2M)
+  description: "## Control anything with **IKEA STYRBAR** remote\n\n
+    Only for use with [ZHA](https://www.home-assistant.io/integrations/zha/) or Zigbee2MQTT
+    (cf [MQTT](https://www.home-assistant.io/integrations/mqtt) + [Z2M addon](https://www.zigbee2mqtt.io/guide/installation/03_ha_addon.html)).\n\n
+    Available controls:\n- Single press **on/off**\n- Hold **on/off**\n- Single press **left/right** arrow\n
+    Actions will be executed every **Hold delay**, but maximum **Max number of loops** times.\n"
+  input:
+    remote_device:
+      name: Remote
+      description: 'IKEA remote (Styrbar) to use.
+
+        '
+      default: []
+      selector:
+        device:
+          filter:
+          - integration: zha
+            manufacturer: IKEA of Sweden
+            model: STYRBAR remote control
+          - integration: mqtt
+            manufacturer: IKEA
+            model: STYRBAR remote control
+          multiple: false
+    on_press_action:
+      name: Press "on" action
+      description: Choose action(s) to run when **on** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    off_press_action:
+      name: Press "off" action
+      description: Choose action(s) to run when **off** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    on_hold_action:
+      name: Hold "on" action
+      description: Choose action(s) to run when **on** button is **held**.
+      default: []
+      selector:
+        action: {}
+    off_hold_action:
+      name: Hold "off" action
+      description: Choose action(s) to run when **off** button is **held**.
+      default: []
+      selector:
+        action: {}
+    arrow_left_press_action:
+      name: Press "arrow_left" action
+      description: Choose action(s) to run when **arrow_left** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    arrow_right_press_action:
+      name: Press "arrow_right" action
+      description: Choose action(s) to run when **arrow_right** button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    helper_section:
+      name: Helpers
+      icon: mdi:cog-outline
+      collapsed: true
+      input:
+        helper_hold_delay:
+          name: Hold delay
+          description: Delay between the execution of the **Hold** action(s).
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max number of loops
+          description: Maximum number of loops when holding down a button.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
+              step: 1.0
+              mode: slider
+        helper_color_list:
+          name: Colors to cycle through
+          select:
+            multiple: true
+            mode: dropdown
+            options:
+              - label: Red
+                value: red
+              - label: Green
+                value: green
+              - label: Blue
+                value: blue
+              - label: Orange
+                value: orange
+              - label: Yellow
+                value: yellow
+              - label: White
+                value: white
+mode: single
+max_exceeded: silent
+triggers:
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: 'on'
+    cluster_id: 6
+    endpoint_id: 1
+  id: press-on-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: 'off'
+    cluster_id: 6
+    endpoint_id: 1
+  id: press-off-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: arrow_left_click
+    cluster_id: 5
+    endpoint_id: 1
+  id: press-arrow-left-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: arrow_right_click
+    cluster_id: 5
+    endpoint_id: 1
+  id: press-arrow-right-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: move_with_on_off
+    cluster_id: 8
+    endpoint_id: 1
+    args:
+    - 0
+    - 83
+  id: hold-on-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    command: move
+    cluster_id: 8
+    endpoint_id: 1
+    args:
+    - 1
+    - 83
+    - 0
+    - 0
+  id: hold-off-zha-e2001
+- trigger: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote_device
+    cluster_id: 8
+    endpoint_id: 1
+    command: stop_with_on_off
+  id: release-zha-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: 'on'
+  id: press-on-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: 'off'
+  id: press-off-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: arrow_left_click
+  id: press-arrow-left-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: arrow_right_click
+  id: press-arrow-right-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_move_up
+  id: hold-on-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_move_down
+  id: hold-off-z2m-e2001
+- trigger: device
+  domain: mqtt
+  device_id: !input remote_device
+  type: action
+  subtype: brightness_stop
+  id: release-z2m-e2001
+actions:
+- choose:
+  - conditions:
+    - condition: trigger
+      id:
+      - press-on-zha-e2001
+      - press-on-z2m-e2001
+    sequence:
+      !input on_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-off-zha-e2001
+      - press-off-z2m-e2001
+    sequence:
+      !input off_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-arrow-left-zha-e2001
+      - press-arrow-left-z2m-e2001
+    sequence:
+      !input arrow_left_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - press-arrow-right-zha-e2001
+      - press-arrow-right-z2m-e2001
+    sequence:
+      !input arrow_right_press_action
+  - conditions:
+    - condition: trigger
+      id:
+      - hold-on-zha-e2001
+      - hold-on-z2m-e2001
+    sequence:
+    - repeat:
+        count: !input helper_max_loops
+        sequence:
+        - parallel:
+          - sequence: !input on_hold_action
+          - sequence:
+            - choose:
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-on-zha-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: event
+                    event_type: zha_event
+                    event_data:
+                      device_id: !input remote_device
+                      command: stop_with_on_off
+                      cluster_id: 8
+                      endpoint_id: 1
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-on-z2m-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: brightness_stop
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: 1_long_release
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+  - conditions:
+    - condition: trigger
+      id:
+      - hold-off-zha-e2001
+      - hold-off-z2m-e2001
+    sequence:
+    - repeat:
+        count: !input helper_max_loops
+        sequence:
+        - parallel:
+          - sequence: !input off_hold_action
+          - sequence:
+            - choose:
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-off-zha-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: event
+                    event_type: zha_event
+                    event_data:
+                      device_id: !input remote_device
+                      command: stop_with_on_off
+                      cluster_id: 8
+                      endpoint_id: 1
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
+              - conditions:
+                - condition: trigger
+                  id:
+                  - hold-off-z2m-e2001
+                sequence:
+                - wait_for_trigger:
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: brightness_stop
+                  - trigger: device
+                    domain: mqtt
+                    device_id: !input remote_device
+                    type: action
+                    subtype: 2_long_release
+                  timeout:
+                    milliseconds: !input helper_hold_delay
+                  continue_on_timeout: true
+                - if:
+                  - condition: template
+                    value_template: '{{ wait.trigger.idx is defined }}'
+                  then:
+                  - stop: button released
